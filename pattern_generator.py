@@ -8,6 +8,9 @@ parser.add_argument('--triangles', dest='triangles', action='store_true')
 parser.set_defaults(triangles=False, squares=False)
 args = parser.parse_args()
 
+def reducePalette(size = 20):
+
+
 im = Image.open("dog.jpeg")
 w, h = im.size
 print("Width: %d Height: %d" % (w, h))
@@ -94,8 +97,15 @@ for x in range(0, w-15, 20):
             if right_b > 0:
                 right_avg_b = int(right_b/count)
 
-            d_rgb.polygon([(x, y+20), (x+20, y+20), (x+20, y)], fill=(right_avg_r, right_avg_g, right_avg_b))
-            print("Right Avg R: %d G: %d B: %d" % (right_avg_r, right_avg_g, right_avg_b))
+            if ((left_avg_r == right_avg_r) and
+                (left_avg_g == right_avg_g) and 
+                (left_avg_b == right_avg_b)):
+
+                pat.paste((avg_r, avg_g, avg_b), (x, y, x+20, y+20))
+            else:
+                d_rgb.polygon([(x, y), (x+20, y), (x, y+20)], fill=(left_avg_r, left_avg_g, left_avg_b))
+                d_rgb.polygon([(x, y+20), (x+20, y+20), (x+20, y)], fill=(right_avg_r, right_avg_g, right_avg_b))
+                print("Right Avg R: %d G: %d B: %d" % (right_avg_r, right_avg_g, right_avg_b))
 
         if args.squares:
 
@@ -110,12 +120,10 @@ for x in range(0, w-15, 20):
             else:
                 rgb_counts[rgb] += 1
 
-if args.squares:
+for x in range(0, w-15, 20):
+    pat.paste((255, 255, 255), (x, 0, x+1, h))
 
-    for x in range(0, w-15, 20):
-        pat.paste((255, 255, 255), (x, 0, x+1, h))
-
-    for y in range(0, h-15, 20):
-        pat.paste((255, 255, 255), (0, y, w, y+1))
+for y in range(0, h-15, 20):
+    pat.paste((255, 255, 255), (0, y, w, y+1))
 
 pat.save("new_dog.jpg")
