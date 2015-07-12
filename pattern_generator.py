@@ -69,16 +69,18 @@ class PatternGenerator():
 
         self.pat = Image.new("RGB", (int(self.w/20)*20, int(self.h/20)*20))
 
-#        dpat = ImageDraw.Draw(pat)
+        dpat = ImageDraw.Draw(self.pat)
 
         block_num = 0
         for x in range(0, self.w-15, 20):
             for y in range(0, self.h-15, 20):
 
                 if self.args.triangles is True:
-                    dpat.polygon([(x, y), (x+20, y), (x, y+20)], fill=self.pallette[self.qblocks[block_num]])
+#                    print("Block Colour: ", self.palette[self.qblocks[block_num]])
+                    dpat.polygon([(x, y), (x+20, y), (x, y+20)], fill=tuple([int(x) for x in self.palette[self.qblocks[block_num]]]))
                     block_num += 1
-                    dpat.polygon([(x, y+20), (x+20, y+20), (x+20, y)], fill=self.palette[self.qblocks[block_num]])
+#                    print("Block Colour: ", self.palette[self.qblocks[block_num]])
+                    dpat.polygon([(x, y+20), (x+20, y+20), (x+20, y)], fill=tuple([int(x) for x in self.palette[self.qblocks[block_num]]]))
 
                 if self.args.squares is True:
                     print("Block Colour: ", self.palette[self.qblocks[block_num]])
@@ -89,7 +91,7 @@ class PatternGenerator():
                 block_num += 1
 
     def reducePalette(self, size=20):
-        self.palette, distortion = kmeans2(array(self.blocks), size)
+        self.palette, distortion = kmeans2(array(self.blocks), size, mini="random")
         self.qblocks, distortion = vq(array(self.blocks), self.palette)
 #        print("Reduced palette to: ", self.palette)
 #        print("Palette Distortion : ", distortion)
@@ -125,7 +127,7 @@ class PatternGenerator():
                     tri_pos = 0
 # print("R:%d G:%d B:%d" % pixel)
                     for y_p in range(y, y+20, 1):
-                        if self.args.triangles:
+                        if self.args.triangles is True:
                             if tri_pos > tri_line:
                                 right_r += self.pixels[x_p, y_p][0]
                                 right_g += self.pixels[x_p, y_p][1]
@@ -137,16 +139,16 @@ class PatternGenerator():
 
                             tri_pos += 1
 
-                        if self.args.squares:
+                        if self.args.squares is True:
                             r += self.pixels[x_p, y_p][0]
                             g += self.pixels[x_p, y_p][1]
                             b += self.pixels[x_p, y_p][2]
 
                         count += 1
 
-                tri_line -= 1
+                    tri_line -= 1
 
-                if self.args.squares == True:
+                if self.args.squares is True:
                     if r > 0:
                         avg_r = r/count
                     if g > 0:
@@ -156,7 +158,7 @@ class PatternGenerator():
 
                     self.blocks.append([avg_r, avg_g, avg_b])
 
-                if self.args.triangles == True:
+                if self.args.triangles is True:
 
                     tri_count = count / 2
                     if left_r > 0:
@@ -167,6 +169,7 @@ class PatternGenerator():
                         left_avg_b = left_b/tri_count
 
                     self.blocks.append([left_avg_r, left_avg_g, left_avg_b])
+                    print("Left Tri: ", [left_avg_r, left_avg_g, left_avg_b])
 
                     if right_r > 0:
                         right_avg_r = right_r/tri_count
@@ -176,6 +179,8 @@ class PatternGenerator():
                         right_avg_b = right_b/tri_count
 
                     self.blocks.append([right_avg_r, right_avg_g, right_avg_b])
+
+                    print("RIght TYri: ", [right_avg_r, right_avg_g, right_avg_b])
 
 
 if __name__ == "__main__":
