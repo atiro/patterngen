@@ -1,5 +1,6 @@
 from PIL import Image, ImageDraw, ImageFont
-from scipy.cluster.vq import kmeans, vq, whiten
+from scipy.cluster.vq import kmeans2, vq, whiten
+from numpy import array
 import argparse
 from operator import itemgetter
 
@@ -66,32 +67,32 @@ class PatternGenerator():
 
 # loop through orig_image, drawing into new image with reduced pallete
 
-        pat = Image.new("P", (int(self.w/20)*20, int(self.h/20)*20))
+        self.pat = Image.new("RGB", (int(self.w/20)*20, int(self.h/20)*20))
 
-        pat.putpalette(self.palette * 13)
-
-        dpat = ImageDraw.Draw(pat)
+#        dpat = ImageDraw.Draw(pat)
 
         block_num = 0
         for x in range(0, self.w-15, 20):
             for y in range(0, self.h-15, 20):
 
-                if 'triangle' in self.args:
-                    dpat.polygon([(x, y), (x+20, y), (x, y+20)], fill=self.blocks[block_num])
+                if self.args.triangles is True:
+                    dpat.polygon([(x, y), (x+20, y), (x, y+20)], fill=self.pallette[self.qblocks[block_num]])
                     block_num += 1
-                    dpat.polygon([(x, y+20), (x+20, y+20), (x+20, y)], fill=self.blocks[block_num])
+                    dpat.polygon([(x, y+20), (x+20, y+20), (x+20, y)], fill=self.palette[self.qblocks[block_num]])
 
-                if 'square' in self.args:
-                    dpat.paste((x, y, x+20, y+20), self.blocks[block_num])
+                if self.args.squares is True:
+                    print("Block Colour: ", self.palette[self.qblocks[block_num]])
+                    self.pat.paste(tuple([int(x) for x in self.palette[self.qblocks[block_num]]]), box=(x, y, x+20, y+20))
 
 # Check if upper/lower are the same after drawing for lettering
 
                 block_num += 1
 
     def reducePalette(self, size=20):
-        whitened = whiten(self.blocks)
-        self.palette, distortion = kmeans(whitened, size)
-        print("Reduced palette to: ", self.palette)
+        self.palette, distortion = kmeans2(array(self.blocks), size)
+        self.qblocks, distortion = vq(array(self.blocks), self.palette)
+#        print("Reduced palette to: ", self.palette)
+#        print("Palette Distortion : ", distortion)
 
     def scanImage(self, img_filename):
         palette = []
@@ -145,34 +146,34 @@ class PatternGenerator():
 
                 tri_line -= 1
 
-                if 'squares' in self.args:
+                if self.args.squares == True:
                     if r > 0:
-                        avg_r = int(r/count)
+                        avg_r = r/count
                     if g > 0:
-                        avg_g = int(g/count)
+                        avg_g = g/count
                     if b > 0:
-                        avg_b = int(b/count)
+                        avg_b = b/count
 
                     self.blocks.append([avg_r, avg_g, avg_b])
 
-                if 'triangles' in self.args:
+                if self.args.triangles == True:
 
                     tri_count = count / 2
                     if left_r > 0:
-                        left_avg_r = int(left_r/tri_count)
+                        left_avg_r = left_r/tri_count
                     if left_g > 0:
-                        left_avg_g = int(left_g/tri_count)
+                        left_avg_g = left_g/tri_count
                     if left_b > 0:
-                        left_avg_b = int(left_b/tri_count)
+                        left_avg_b = left_b/tri_count
 
                     self.blocks.append([left_avg_r, left_avg_g, left_avg_b])
 
                     if right_r > 0:
-                        right_avg_r = int(right_r/tri_count)
+                        right_avg_r = right_r/tri_count
                     if right_g > 0:
-                        right_avg_g = int(right_g/tri_count)
+                        right_avg_g = right_g/tri_count
                     if right_b > 0:
-                        right_avg_b = int(right_b/tri_count)
+                        right_avg_b = right_b/tri_count
 
                     self.blocks.append([right_avg_r, right_avg_g, right_avg_b])
 
@@ -184,6 +185,9 @@ if __name__ == "__main__":
 
     for img_filename in filenames:
         pg.scanImage(img_filename)
+
+        print(pg.blocks)
+
         pg.reducePalette()
         pg.drawPattern()
 
@@ -191,7 +195,7 @@ if __name__ == "__main__":
 #    pg.drawLetters()
 #    pg.drawAxes()
 
-        pg.drawGrid()
+#        pg.drawGrid()
         pg.saveImage()
 
 # Save image
