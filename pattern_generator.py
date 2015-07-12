@@ -1,5 +1,5 @@
 from PIL import Image, ImageDraw, ImageFont
-from scipy.cluster.vq import kmeans2, vq, whiten
+from scipy.cluster.vq import kmeans2, vq, whiten, kmeans
 from numpy import array
 import argparse
 from operator import itemgetter
@@ -34,8 +34,7 @@ class PatternGenerator():
 
     def drawGrid(self):
         for x in range(0, self.w-15, 20):
-#            self.pat.paste((255, 255, 255), (x, 0, x+1, self.h))
-            self.pat.paste((0, 0, 0), (x, 0, x+1, self.h))
+            self.pat.paste((255, 255, 255), (x, 0, x+1, self.h))
 
         for y in range(0, self.h-15, 20):
             self.pat.paste((255, 255, 255), (0, y, self.w, y+1))
@@ -91,9 +90,9 @@ class PatternGenerator():
                 block_num += 1
 
     def reducePalette(self, size=20):
-        self.palette, distortion = kmeans2(array(self.blocks), size, mini="random")
-        self.qblocks, distortion = vq(array(self.blocks), self.palette)
-#        print("Reduced palette to: ", self.palette)
+        self.palette, self.qblocks = kmeans2(array(self.blocks), size, minit="random", iter=5)
+#        self.qblocks, distortion = vq(array(self.blocks), self.palette)
+        print("Reduced palette to: ", self.palette)
 #        print("Palette Distortion : ", distortion)
 
     def scanImage(self, img_filename):
@@ -169,7 +168,6 @@ class PatternGenerator():
                         left_avg_b = left_b/tri_count
 
                     self.blocks.append([left_avg_r, left_avg_g, left_avg_b])
-                    print("Left Tri: ", [left_avg_r, left_avg_g, left_avg_b])
 
                     if right_r > 0:
                         right_avg_r = right_r/tri_count
@@ -180,7 +178,6 @@ class PatternGenerator():
 
                     self.blocks.append([right_avg_r, right_avg_g, right_avg_b])
 
-                    print("RIght TYri: ", [right_avg_r, right_avg_g, right_avg_b])
 
 
 if __name__ == "__main__":
@@ -191,7 +188,7 @@ if __name__ == "__main__":
     for img_filename in filenames:
         pg.scanImage(img_filename)
 
-        print(pg.blocks)
+#        print(pg.blocks)
 
         pg.reducePalette()
         pg.drawPattern()
@@ -200,7 +197,7 @@ if __name__ == "__main__":
 #    pg.drawLetters()
 #    pg.drawAxes()
 
-#        pg.drawGrid()
+        pg.drawGrid()
         pg.saveImage()
 
 # Save image
