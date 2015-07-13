@@ -10,13 +10,14 @@ class PatternGenerator():
     pat = None
     args = None
     blocks = []
-    palette = ()
+    palette = None
     w = 0
     h = 0
 
-    def saveImage(self):
+    def saveImage(self, filename):
         if self.pat is not None:
-            self.pat.save("dog-new.jpeg")
+            filename = filename.replace("jpeg", "png")
+            self.pat.save(filename)
 
     def parseArgs(self):
         parser = argparse.ArgumentParser()
@@ -71,26 +72,35 @@ class PatternGenerator():
         dpat = ImageDraw.Draw(self.pat)
 
         block_num = 0
-        for x in range(0, self.w-15, 20):
-            for y in range(0, self.h-15, 20):
+        for x in range(0, self.w-20, 20):
+            for y in range(0, self.h-20, 20):
 
                 if self.args.triangles is True:
 #                    print("Block Colour: ", self.palette[self.qblocks[block_num]])
-                    dpat.polygon([(x, y), (x+20, y), (x, y+20)], fill=tuple([int(x) for x in self.palette[self.qblocks[block_num]]]))
+                    if self.palette is not None:
+                       dpat.polygon([(x, y), (x+20, y), (x, y+20)], fill=tuple([int(x) for x in self.palette[self.qblocks[block_num]]]))
+                    else:
+                       dpat.polygon([(x, y), (x+20, y), (x, y+20)], fill=tuple([int(x) for x in self.blocks[block_num]]))
                     block_num += 1
 #                    print("Block Colour: ", self.palette[self.qblocks[block_num]])
-                    dpat.polygon([(x, y+20), (x+20, y+20), (x+20, y)], fill=tuple([int(x) for x in self.palette[self.qblocks[block_num]]]))
+                    if self.palette is not None:
+                        dpat.polygon([(x, y+20), (x+20, y+20), (x+20, y)], fill=tuple([int(x) for x in self.palette[self.qblocks[block_num]]]))
+                    else:
+                        dpat.polygon([(x, y+20), (x+20, y+20), (x+20, y)], fill=tuple([int(x) for x in self.blocks[block_num]]))
 
                 if self.args.squares is True:
                     print("Block Colour: ", self.palette[self.qblocks[block_num]])
-                    self.pat.paste(tuple([int(x) for x in self.palette[self.qblocks[block_num]]]), box=(x, y, x+20, y+20))
+                    if self.palette is not None:
+                        self.pat.paste(tuple([int(x) for x in self.palette[self.qblocks[block_num]]]), box=(x, y, x+20, y+20))
+                    else:
+                        self.pat.paste(tuple([int(x) for x in self.blocks[block_num]]), box=(x, y, x+20, y+20))
 
 # Check if upper/lower are the same after drawing for lettering
 
                 block_num += 1
 
-    def reducePalette(self, size=20):
-        self.palette, self.qblocks = kmeans2(array(self.blocks), size, minit="random", iter=5)
+    def reducePalette(self, size=8):
+        self.palette, self.qblocks = kmeans2(array(self.blocks), size, minit="random")
 #        self.qblocks, distortion = vq(array(self.blocks), self.palette)
         print("Reduced palette to: ", self.palette)
 #        print("Palette Distortion : ", distortion)
@@ -108,8 +118,8 @@ class PatternGenerator():
 
         self.pat = Image.new("RGB", (int(self.w/20)*20, int(self.h/20)*20), "white")
 
-        for x in range(0, self.w-15, 20):
-            for y in range(0, self.h-15, 20):
+        for x in range(0, self.w-20, 20):
+            for y in range(0, self.h-20, 20):
                 print("X: %d Y: %d" % (x, y))
 
 #        subim = im_rgb.crop((x, y, 20, 20))
@@ -122,12 +132,12 @@ class PatternGenerator():
                 left_avg_r = left_avg_g = left_avg_b = 0
 
                 tri_line = 20
-                for x_p in range(x, x+20, 1):
+                for y_p in range(y, y+20, 1):
                     tri_pos = 0
 # print("R:%d G:%d B:%d" % pixel)
-                    for y_p in range(y, y+20, 1):
+                    for x_p in range(x, x+20, 1):
                         if self.args.triangles is True:
-                            if tri_pos > tri_line:
+                            if tri_pos >= tri_line:
                                 right_r += self.pixels[x_p, y_p][0]
                                 right_g += self.pixels[x_p, y_p][1]
                                 right_b += self.pixels[x_p, y_p][2]
@@ -190,6 +200,10 @@ if __name__ == "__main__":
 
 #        print(pg.blocks)
 
+        pg.drawPattern()
+        pg.drawGrid()
+        pg.saveImage("triangles-" + img_filename)
+
         pg.reducePalette()
         pg.drawPattern()
 
@@ -198,7 +212,7 @@ if __name__ == "__main__":
 #    pg.drawAxes()
 
         pg.drawGrid()
-        pg.saveImage()
+        pg.saveImage("reduced-" + img_filename)
 
 # Save image
 
