@@ -4,7 +4,7 @@ from numpy import array
 import argparse
 from operator import itemgetter
 
-class PatternGenerator():
+class PatternMaker():
 
     img = None
     pat = None
@@ -192,7 +192,7 @@ class PatternGenerator():
 
 if __name__ == "__main__":
 
-    pg = PatternGenerator()
+    pg = PatternMaker()
     filenames = pg.parseArgs()
 
     for img_filename in filenames:
