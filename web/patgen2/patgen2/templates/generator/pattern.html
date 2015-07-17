@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<form action="/generator/" method="post">
+	{% csrf_token %}
+  {{form}}
+  <input type="submit" value="OK">
+</form>
+
+
+{% endblock %}
