@@ -11,7 +11,9 @@ def upload_file(request):
         if form.is_valid():
             data = form.cleaned_data
             img = handle_uploaded_file(f=request.FILES['file'], shapes=data['shapes'])
-            return HttpResponse(img, content_type="image/jpeg")
+            response = HttpResponse(content_type="image/png")
+            img.save(response, "PNG")
+            return response
     else:
         form = UploadFileForm()
 

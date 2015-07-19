@@ -110,7 +110,7 @@ class PatternMaker():
 
                 block_num += 1
 
-    def reducePalette(self, size=8):
+    def reducePalette(self, size=20):
         self.palette, self.qblocks = kmeans2(array(self.blocks), size, minit="random")
 #        self.qblocks, distortion = vq(array(self.blocks), self.palette)
         print("Reduced palette to: ", self.palette)
@@ -212,6 +212,8 @@ def handle_uploaded_file(f, shapes):
         pg.parseArgs(['--triangles'])
 
     pg.scanImage(img_filename=f)
+
+    pg.reducePalette()
 
     pg.drawPattern()
     pg.drawGrid()
