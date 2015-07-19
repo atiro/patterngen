@@ -2,10 +2,12 @@
 
 {% block content %}
 
-<form action="/generator/" method="post">
+<form action="/generator/" method="post" enctype="multipart/form-data">
 	{% csrf_token %}
   {{form}}
+
   <input type="submit" value="OK">
+
 </form>
 
 

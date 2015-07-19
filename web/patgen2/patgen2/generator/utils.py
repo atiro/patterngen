@@ -2,6 +2,7 @@ from PIL import Image, ImageDraw, ImageFont
 from scipy.cluster.vq import kmeans2, vq, whiten, kmeans
 from numpy import array
 import argparse
+from io import StringIO
 from operator import itemgetter
 
 class PatternMaker():
@@ -19,14 +20,24 @@ class PatternMaker():
             filename = filename.replace("jpeg", "png")
             self.pat.save(filename)
 
-    def parseArgs(self):
+    def setArgs(self, shapes='squares', colours=20, size=20):
+        self.args = {}
+        self.args['shapes'] = shapes
+        self.args['colours'] = colours
+        self.args['size'] = size
+
+    def parseArgs(self, args=None):
         parser = argparse.ArgumentParser()
         parser.add_argument('--squares', dest='squares', action='store_true')
         parser.add_argument('--triangles', dest='triangles', action='store_true')
-        parser.add_argument('images', nargs='+', help='Images to process')
+        parser.add_argument('images', nargs='*', help='Images to process')
 
         parser.set_defaults(triangles=False, squares=False)
-        self.args = parser.parse_args()
+
+        if args is not None:
+            self.args = parser.parse_args(args)
+        else:
+            self.args = parser.parse_args()
 
         return self.args.images
 
@@ -105,10 +116,14 @@ class PatternMaker():
         print("Reduced palette to: ", self.palette)
 #        print("Palette Distortion : ", distortion)
 
-    def scanImage(self, img_filename):
+    def scanImage(self, img_filename=None, img_buffer=None):
         palette = []
 
-        self.image = Image.open(img_filename)
+        if img_buffer is not None:
+            self.image = Image.open(StringIO(img_buffer))
+        else:
+            self.image = Image.open(img_filename)
+
         self.image = self.image.convert('RGBA')
 
         self.w, self.h = self.image.size
@@ -188,10 +203,16 @@ class PatternMaker():
 
                     self.blocks.append([right_avg_r, right_avg_g, right_avg_b])
 
-def handle_uploaded_file(f):
+def handle_uploaded_file(f, shapes):
 
     pg = PatternMaker()
-    pg.scanImage(f)
+    if shapes == 'squares':
+        pg.parseArgs(['--squares'])
+    else:
+        pg.parseArgs(['--triangles'])
+
+    pg.scanImage(img_filename=f)
+
     pg.drawPattern()
     pg.drawGrid()
 
