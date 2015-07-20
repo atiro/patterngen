@@ -11,9 +11,17 @@ class PatternMaker():
     pat = None
     args = None
     blocks = []
+    qblocks = []
     palette = None
     w = 0
     h = 0
+
+    def reset(self):
+
+        self.blocks = []
+        self.qblocks = []
+        self.palette = None
+        self.w = self.h = 0
 
     def saveImage(self, filename):
         if self.pat is not None:
@@ -133,9 +141,12 @@ class PatternMaker():
 
         self.pat = Image.new("RGB", (int(self.w/20)*20, int(self.h/20)*20), "white")
 
+        # Arrg - not being cleared between requests for some reason. 
+        self.blocks = []
+
         for x in range(0, self.w-20, 20):
             for y in range(0, self.h-20, 20):
-                print("X: %d Y: %d" % (x, y))
+#                print("X: %d Y: %d" % (x, y))
 
 #        subim = im_rgb.crop((x, y, 20, 20))
 
@@ -218,7 +229,11 @@ def handle_uploaded_file(f, shapes):
     pg.drawPattern()
     pg.drawGrid()
 
-    return pg.pat
+    pat_img = pg.pat
+
+    pg.reset()
+
+    return pat_img
 
 
 if __name__ == "__main__":
