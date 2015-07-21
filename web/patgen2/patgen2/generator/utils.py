@@ -29,8 +29,14 @@ class PatternMaker():
             self.pat.save(filename)
 
     def setArgs(self, shapes='squares', colours=20, size=20):
+
         self.args = {}
-        self.args['shapes'] = shapes
+
+        if shapes == 'squares':
+            self.args['squares'] = 1
+        else:
+            self.args['triangles'] = 1
+
         self.args['colours'] = colours
         self.args['size'] = size
 
@@ -43,20 +49,25 @@ class PatternMaker():
         parser.set_defaults(triangles=False, squares=False)
 
         if args is not None:
-            self.args = parser.parse_args(args)
+            pargs = parser.parse_args(args)
         else:
-            self.args = parser.parse_args()
+            pargs = parser.parse_args()
 
-        return self.args.images
+        self.args = vars(pargs)
+
+        return self.args['images']
 
     def drawAxes(self):
         pass
 
     def drawGrid(self):
-        for x in range(0, self.w-15, 20):
+
+        block_size = self.args['size']
+
+        for x in range(0, self.w, block_size):
             self.pat.paste((255, 255, 255), (x, 0, x+1, self.h))
 
-        for y in range(0, self.h-15, 20):
+        for y in range(0, self.h, block_size):
             self.pat.paste((255, 255, 255), (0, y, self.w, y+1))
 
     def drawLetters(self):
@@ -70,12 +81,12 @@ class PatternMaker():
 
         d_rgb = ImageDraw.Draw(pat)
 
-        if self.args.squares:
+        if 'squares' in self.args:
             rgb = '#%02x%02x%02x' % (avg_r, avg_g, avg_b)
             if rgb not in rgb_used:
                 rgb_used[rgb] = rgb_count
                 rgb_counts[rgb] = 1
-                self.pat.paste((avg_r, avg_g, avg_b), (x, y, x+20, y+20))
+                self.pat.paste((avg_r, avg_g, avg_b), (x, y, x+block_size, y+block_size))
                 d_rgb.text((x+8, y+8), chr(ord("A")+rgb_count), font=font)
                 rgb_count += 1
             else:
@@ -86,40 +97,42 @@ class PatternMaker():
 
 # loop through orig_image, drawing into new image with reduced pallete
 
-        self.pat = Image.new("RGB", (int(self.w/20)*20, int(self.h/20)*20))
+        block_size = self.args['size']
+
+        self.pat = Image.new("RGB", (int(self.w/block_size)*block_size, int(self.h/block_size)*block_size))
 
         dpat = ImageDraw.Draw(self.pat)
 
         block_num = 0
-        for x in range(0, self.w-20, 20):
-            for y in range(0, self.h-20, 20):
+        for x in range(0, self.w - block_size, block_size):
+            for y in range(0, self.h - block_size, block_size):
 
-                if self.args.triangles is True:
+                if 'triangles' in self.args:
 #                    print("Block Colour: ", self.palette[self.qblocks[block_num]])
                     if self.palette is not None:
-                       dpat.polygon([(x, y), (x+20, y), (x, y+20)], fill=tuple([int(x) for x in self.palette[self.qblocks[block_num]]]))
+                       dpat.polygon([(x, y), (x+block_size, y), (x, y+block_size)], fill=tuple([int(x) for x in self.palette[self.qblocks[block_num]]]))
                     else:
-                       dpat.polygon([(x, y), (x+20, y), (x, y+20)], fill=tuple([int(x) for x in self.blocks[block_num]]))
+                       dpat.polygon([(x, y), (x+block_size, y), (x, y+block_size)], fill=tuple([int(x) for x in self.blocks[block_num]]))
                     block_num += 1
 #                    print("Block Colour: ", self.palette[self.qblocks[block_num]])
                     if self.palette is not None:
-                        dpat.polygon([(x, y+20), (x+20, y+20), (x+20, y)], fill=tuple([int(x) for x in self.palette[self.qblocks[block_num]]]))
+                        dpat.polygon([(x, y+block_size), (x+block_size, y+block_size), (x+block_size, y)], fill=tuple([int(x) for x in self.palette[self.qblocks[block_num]]]))
                     else:
-                        dpat.polygon([(x, y+20), (x+20, y+20), (x+20, y)], fill=tuple([int(x) for x in self.blocks[block_num]]))
+                        dpat.polygon([(x, y+block_size), (x+block_size, y+block_size), (x+block_size, y)], fill=tuple([int(x) for x in self.blocks[block_num]]))
 
-                if self.args.squares is True:
-                    print("Block Colour: ", self.palette[self.qblocks[block_num]])
+                if 'squares' in self.args:
+#                    print("Block Colour: ", self.palette[self.qblocks[block_num]])
                     if self.palette is not None:
-                        self.pat.paste(tuple([int(x) for x in self.palette[self.qblocks[block_num]]]), box=(x, y, x+20, y+20))
+                        self.pat.paste(tuple([int(x) for x in self.palette[self.qblocks[block_num]]]), box=(x, y, x+block_size, y+block_size))
                     else:
-                        self.pat.paste(tuple([int(x) for x in self.blocks[block_num]]), box=(x, y, x+20, y+20))
+                        self.pat.paste(tuple([int(x) for x in self.blocks[block_num]]), box=(x, y, x+block_size, y+block_size))
 
 # Check if upper/lower are the same after drawing for lettering
 
                 block_num += 1
 
-    def reducePalette(self, size=20):
-        self.palette, self.qblocks = kmeans2(array(self.blocks), size, minit="random")
+    def reducePalette(self):
+        self.palette, self.qblocks = kmeans2(array(self.blocks), self.args['colours'], minit="random")
 #        self.qblocks, distortion = vq(array(self.blocks), self.palette)
         print("Reduced palette to: ", self.palette)
 #        print("Palette Distortion : ", distortion)
@@ -139,13 +152,15 @@ class PatternMaker():
 
         self.pixels = self.image.load()
 
-        self.pat = Image.new("RGB", (int(self.w/20)*20, int(self.h/20)*20), "white")
+        block_size = self.args['size']
+
+        self.pat = Image.new("RGB", (int(self.w/block_size)*block_size, int(self.h/block_size)*block_size), "white")
 
         # Arrg - not being cleared between requests for some reason. 
         self.blocks = []
 
-        for x in range(0, self.w-20, 20):
-            for y in range(0, self.h-20, 20):
+        for x in range(0, self.w - block_size, block_size):
+            for y in range(0, self.h - block_size, block_size):
 #                print("X: %d Y: %d" % (x, y))
 
 #        subim = im_rgb.crop((x, y, 20, 20))
@@ -157,12 +172,12 @@ class PatternMaker():
                 right_avg_r = right_avg_g = right_avg_b = 0
                 left_avg_r = left_avg_g = left_avg_b = 0
 
-                tri_line = 20
-                for y_p in range(y, y+20, 1):
+                tri_line = block_size
+                for y_p in range(y, y + block_size, 1):
                     tri_pos = 0
 # print("R:%d G:%d B:%d" % pixel)
-                    for x_p in range(x, x+20, 1):
-                        if self.args.triangles is True:
+                    for x_p in range(x, x + block_size, 1):
+                        if 'triangles' in self.args:
                             if tri_pos >= tri_line:
                                 right_r += self.pixels[x_p, y_p][0]
                                 right_g += self.pixels[x_p, y_p][1]
@@ -174,7 +189,7 @@ class PatternMaker():
 
                             tri_pos += 1
 
-                        if self.args.squares is True:
+                        if 'squares' in self.args:
                             r += self.pixels[x_p, y_p][0]
                             g += self.pixels[x_p, y_p][1]
                             b += self.pixels[x_p, y_p][2]
@@ -183,7 +198,7 @@ class PatternMaker():
 
                     tri_line -= 1
 
-                if self.args.squares is True:
+                if 'squares' in self.args:
                     if r > 0:
                         avg_r = r/count
                     if g > 0:
@@ -193,7 +208,7 @@ class PatternMaker():
 
                     self.blocks.append([avg_r, avg_g, avg_b])
 
-                if self.args.triangles is True:
+                if 'triangles' in self.args:
 
                     tri_count = count / 2
                     if left_r > 0:
@@ -214,13 +229,11 @@ class PatternMaker():
 
                     self.blocks.append([right_avg_r, right_avg_g, right_avg_b])
 
-def handle_uploaded_file(f, shapes):
+def handle_uploaded_file(f, shapes, colours, size):
 
     pg = PatternMaker()
-    if shapes == 'squares':
-        pg.parseArgs(['--squares'])
-    else:
-        pg.parseArgs(['--triangles'])
+
+    pg.setArgs(shapes=shapes, colours=int(colours), size=int(size))
 
     pg.scanImage(img_filename=f)
 
